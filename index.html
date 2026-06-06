@@ -12,7 +12,6 @@ body{background:#0a0804;color:var(--txt);font-family:'DM Mono',monospace;height:
 #vid{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
 #ar{position:fixed;inset:0;width:100%;height:100%;z-index:2;pointer-events:none}
 
-/* PERMISSION */
 #perm{position:fixed;inset:0;z-index:100;background:#0a0804;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:40px;transition:opacity .5s}
 .picon{font-size:60px;animation:bob 3s ease-in-out infinite}
 @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
@@ -22,23 +21,20 @@ body{background:#0a0804;color:var(--txt);font-family:'DM Mono',monospace;height:
 #startbtn:active{background:rgba(255,184,0,.1)}
 #permerr{font-size:9px;color:#FF3B3B;letter-spacing:.15em;text-align:center;display:none;line-height:1.8;max-width:280px}
 
-/* BADGES */
 #badges{position:fixed;top:10px;left:0;right:0;z-index:20;display:flex;justify-content:center;gap:6px;pointer-events:none}
 .badge{font-size:8px;letter-spacing:.15em;padding:3px 10px;border-radius:10px;backdrop-filter:blur(6px)}
 .ok{background:rgba(57,255,122,.12);color:var(--ok);border:1px solid rgba(57,255,122,.3)}
 .warn{background:rgba(255,184,0,.12);color:var(--sun);border:1px solid rgba(255,184,0,.3)}
 .err{background:rgba(255,59,59,.12);color:#FF3B3B;border:1px solid rgba(255,59,59,.3)}
 
-/* TOP BAR */
 #topbar{position:fixed;top:36px;left:0;right:0;z-index:10;display:flex;justify-content:space-between;padding:6px 14px;pointer-events:none}
 #tb-l{display:flex;flex-direction:column;gap:2px}
 #tb-r{display:flex;flex-direction:column;align-items:flex-end;gap:2px}
 #tb-date{font-family:'Bebas Neue';font-size:11px;letter-spacing:.25em;color:var(--dim)}
-#tb-sensors{font-family:'Bebas Neue';font-size:12px;color:var(--sun)}
+#tb-dbg{font-size:8px;color:var(--sun);letter-spacing:.08em;line-height:1.5}
 #tb-time{font-family:'Bebas Neue';font-size:24px;line-height:1}
 #tb-loc{font-size:8px;letter-spacing:.1em;color:var(--dim)}
 
-/* CONTROLS */
 #controls{position:fixed;bottom:150px;left:50%;transform:translateX(-50%);z-index:15;display:flex;gap:10px;align-items:center}
 .cbtn{background:var(--panel);border:1px solid rgba(255,184,0,.2);color:var(--sun);font-family:'DM Mono';font-size:9px;letter-spacing:.18em;padding:7px 12px;border-radius:3px;cursor:pointer;backdrop-filter:blur(10px);white-space:nowrap}
 .cbtn:active{background:rgba(255,184,0,.1)}
@@ -48,7 +44,6 @@ body{background:#0a0804;color:var(--txt);font-family:'DM Mono',monospace;height:
 .pinp{background:none;border:none;border-bottom:1px solid rgba(255,184,0,.3);color:var(--txt);font-family:'DM Mono';font-size:14px;outline:none;color-scheme:dark;padding:2px 0;width:100%}
 #pnow{background:none;border:1px solid rgba(255,184,0,.3);color:var(--sun);font-family:'DM Mono';font-size:9px;letter-spacing:.2em;padding:6px;border-radius:2px;cursor:pointer;text-align:center;text-transform:uppercase}
 
-/* PANEL */
 #panel{position:fixed;bottom:0;left:0;right:0;z-index:10;background:var(--panel);backdrop-filter:blur(20px);border-top:1px solid rgba(255,184,0,.12);padding:12px 16px 28px}
 .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}
 .st{display:flex;flex-direction:column;gap:1px}
@@ -83,7 +78,7 @@ body{background:#0a0804;color:var(--txt);font-family:'DM Mono',monospace;height:
 <div id="topbar">
   <div id="tb-l">
     <div id="tb-date">—</div>
-    <div id="tb-sensors">HDG —° | TILT —°</div>
+    <div id="tb-dbg">α— β— γ—</div>
   </div>
   <div id="tb-r">
     <div id="tb-time">--:--:--</div>
@@ -114,11 +109,11 @@ body{background:#0a0804;color:var(--txt);font-family:'DM Mono',monospace;height:
 
 <script>
 // ══════════════════════════════════════════════════════
-// SUN MATH
+// SUN MATH (NOAA)
 // ══════════════════════════════════════════════════════
 const D2R = Math.PI/180, R2D = 180/Math.PI;
 
-function sunPos(date, lat, lon){
+function sunPos(date, lat, lon) {
   const JD = date.getTime()/86400000 + 2440587.5;
   const JC = (JD-2451545)/36525;
   let L0 = (280.46646 + JC*(36000.76983 + JC*0.0003032))%360; if(L0<0)L0+=360;
@@ -141,11 +136,11 @@ function sunPos(date, lat, lon){
   const alt=Math.asin(Math.max(-1,Math.min(1,sinAlt)))*R2D;
   const cosAz=(Math.sin(dec)-Math.sin(latr)*sinAlt)/(Math.cos(latr)*Math.cos(Math.asin(sinAlt)));
   let az=Math.acos(Math.max(-1,Math.min(1,cosAz)))*R2D;
-  if(HA>0)az=360-az;
-  return{alt,az};
+  if(HA>0) az=360-az;
+  return {alt, az};
 }
 
-function sunTimes(date, lat, lon){
+function sunTimes(date, lat, lon) {
   const JD=date.getTime()/86400000+2440587.5;
   const JC=(JD-2451545)/36525;
   let L0=(280.46646+JC*36000.76983)%360; if(L0<0)L0+=360;
@@ -158,82 +153,155 @@ function sunTimes(date, lat, lon){
   const y=Math.tan(eps*D2R/2)**2;
   const EqT=R2D*(y*Math.sin(2*L0*D2R)-2*0.016708634*Math.sin(mr))*4;
   const cosHA=(Math.cos(90.833*D2R)-Math.sin(lat*D2R)*Math.sin(dec))/(Math.cos(lat*D2R)*Math.cos(dec));
-  if(Math.abs(cosHA)>1)return{sr:null,ss:null,noon:null};
+  if(Math.abs(cosHA)>1) return {sr:null,ss:null,noon:null};
   const HA=Math.acos(cosHA)*R2D, noon=720-4*lon-EqT;
   const mk=m=>{const d=new Date(date);d.setUTCHours(0,0,0,0);d.setTime(d.getTime()+m*60000);return d};
-  return{sr:mk(noon-HA*4),ss:mk(noon+HA*4),noon:mk(noon)};
+  return {sr:mk(noon-HA*4), ss:mk(noon+HA*4), noon:mk(noon)};
 }
 
-const fmt=d=>d?`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`:'--:--';
-const MON=['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
+const fmt = d => d ? `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}` : '--:--';
+const MON = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
+
+// ══════════════════════════════════════════════════════
+// 3D ROTATION — World vector to Camera vector
+//
+// The W3C deviceorientation spec defines a rotation from Earth frame
+// to Device frame using intrinsic Tait-Bryan Z-X'-Y'' angles (alpha, beta, gamma).
+//
+// Earth frame (NED — North-East-Down):
+//   X = East, Y = North, Z = Up  (we use ENU)
+//
+// To convert azimuth/altitude to a unit vector in Earth frame (ENU):
+//   az = 0 → North, az = 90 → East (clockwise from North)
+//   alt = 0 → horizon, alt = 90 → zenith
+//
+//   X_earth =  sin(az) * cos(alt)   (East component)
+//   Y_earth =  cos(az) * cos(alt)   (North component)
+//   Z_earth =  sin(alt)              (Up component)
+//
+// Device frame (portrait, screen up):
+//   X_dev = right, Y_dev = up (screen top), Z_dev = out of screen
+//
+// The rotation matrix R_device_to_earth is built from alpha, beta, gamma.
+// We need R_earth_to_device = R^T (transpose, since R is orthogonal).
+//
+// Using webkitCompassHeading on iOS:
+//   compassHeading = direction screen-top faces (0=N, 90=E)
+//   alpha (CCW from arbitrary) is NOT compass heading on iOS
+//   webkitCompassHeading = -(alpha) adjusted for magnetic north
+//   So for iOS we replace alpha with: alpha_abs = -compassHeading * D2R
+//   but we still need alpha in the rotation matrix sense.
+//   Correct: alpha_rad = (360 - compassHeading) * D2R  (CCW convention)
+//
+// ══════════════════════════════════════════════════════
+
+// Build rotation matrix that transforms Earth→Device
+// Using the W3C spec formula: R = Rz(alpha) * Rx(beta) * Ry(gamma)
+// Then R_earth_to_cam = R^T
+function buildRotationMatrix(alphaRad, betaRad, gammaRad) {
+  const ca = Math.cos(alphaRad), sa = Math.sin(alphaRad);
+  const cb = Math.cos(betaRad),  sb = Math.sin(betaRad);
+  const cg = Math.cos(gammaRad), sg = Math.sin(gammaRad);
+
+  // R = Rz(a) * Rx(b) * Ry(g)  — W3C Z-X'-Y'' convention
+  // Row-major:
+  const r00 =  ca*cg - sa*sb*sg;
+  const r01 = -sa*cb;
+  const r02 =  ca*sg + sa*sb*cg;
+  const r10 =  sa*cg + ca*sb*sg;
+  const r11 =  ca*cb;
+  const r12 =  sa*sg - ca*sb*cg;
+  const r20 = -cb*sg;
+  const r21 =  sb;
+  const r22 =  cb*cg;
+
+  // This R rotates Earth→Device. Return as flat array [r00..r22]
+  return [r00,r01,r02, r10,r11,r12, r20,r21,r22];
+}
+
+// Apply rotation matrix to vector [x,y,z]
+function rotVec(R, x, y, z) {
+  return [
+    R[0]*x + R[1]*y + R[2]*z,
+    R[3]*x + R[4]*y + R[5]*z,
+    R[6]*x + R[7]*y + R[8]*z
+  ];
+}
+
+// Convert azimuth/altitude → ENU unit vector
+// az: 0=N, 90=E (clockwise); alt: degrees above horizon
+function azelToENU(azDeg, altDeg) {
+  const az = azDeg * D2R, alt = altDeg * D2R;
+  const x =  Math.sin(az) * Math.cos(alt); // East
+  const y =  Math.cos(az) * Math.cos(alt); // North
+  const z =  Math.sin(alt);                // Up
+  return [x, y, z];
+}
+
+// Project device-frame vector to screen (x,y)
+// In device frame (portrait):
+//   X_dev = right, Y_dev = up, Z_dev = toward viewer (out of screen)
+// The camera looks along -Z_dev (into the scene).
+// So to project: camera_x → screen_x, camera_y → screen_y
+// An object is visible if its Z_dev > 0 (in front of camera).
+//
+// After rotating ENU → Device:
+//   dev[0] = right component
+//   dev[1] = up component  (positive = higher on screen)
+//   dev[2] = depth (positive = in front of camera)
+//
+function projectToScreen(devVec, sw, sh, panH, topH, fovHdeg, fovVdeg) {
+  const [dx, dy, dz] = devVec;
+  const areaH = sh - panH - topH;
+  const CX = sw/2, CY = topH + areaH/2;
+
+  if (dz <= 0) return null; // behind camera
+
+  // Perspective projection using FOV
+  const fH = Math.tan(fovHdeg/2 * D2R);
+  const fV = Math.tan(fovVdeg/2 * D2R);
+
+  const sx = CX + (dx/dz) * (sw/2) / fH;
+  const sy = CY - (dy/dz) * (areaH/2) / fV; // minus: Y up → screen Y down
+
+  return {x: sx, y: sy};
+}
 
 // ══════════════════════════════════════════════════════
 // STATE
 // ══════════════════════════════════════════════════════
-let GPS=null, running=false, simDate=null;
+let GPS = null, running = false, simDate = null;
 
-// Sensor raw values
-// webkitCompassHeading: 0=N, 90=E, 180=S, 270=W (clockwise) — screen-top direction
-// beta: device tilt front/back. Flat=0, upright portrait=90, face-down=180
-// gamma: device tilt left/right. -90..90
-let rawHeading=null, rawBeta=90, rawGamma=0;
+// Raw sensor values
+let rawAlpha = null;      // alpha from deviceorientation (CCW from arbitrary north)
+let rawBeta  = 90;        // front/back tilt
+let rawGamma = 0;         // left/right tilt
+let rawCompass = null;    // webkitCompassHeading (iOS absolute, CW from N)
 
 // Smoothed
-let sHdg=null, sBeta=90;
+let sAlpha = null, sBeta = 90, sGamma = 0;
 
-function smoothAngle(prev,next,k=0.1){
-  if(prev==null)return next;
-  let d=next-prev; if(d>180)d-=360; if(d<-180)d+=360;
-  return(prev+k*d+360)%360;
+function smoothAngle(prev, next, k=0.1) {
+  if (prev==null) return next;
+  let d = next-prev; if(d>180)d-=360; if(d<-180)d+=360;
+  return (prev+k*d+360)%360;
 }
-function smoothLin(prev,next,k=0.1){
-  if(prev==null)return next;
-  return prev+k*(next-prev);
-}
-
-// ══════════════════════════════════════════════════════
-// WORLD-TO-SCREEN PROJECTION
-//
-// The camera is pointing in direction (camAz, camPitch):
-//   camAz   = compass heading (0=N,90=E) — where screen-top faces
-//   camPitch = elevation angle camera is pointing:
-//              0 = horizontal, +90 = straight up, -90 = straight down
-//
-// For a point at world (sunAz, sunAlt):
-//   dAz = angular difference in azimuth from camera aim → X offset
-//   dEl = angular difference in elevation from camera aim → Y offset
-//         (positive = above camera center → negative Y on screen)
-//
-// FOV: typical rear camera ~65°H × 50°V
-// ══════════════════════════════════════════════════════
-const FOV_H = 65;
-const FOV_V = 50;
-
-// Camera pitch from beta:
-// beta=90 → camera horizontal (pitch=0)
-// beta=0  → camera pointing straight up (pitch=+90)
-// beta=180→ camera pointing straight down (pitch=-90)
-// beta>90 → camera tilted down (pitch negative)
-function betaToPitch(beta){
-  return 90 - beta; // when beta=90 → pitch=0 ✓, beta=0 → pitch=90 ✓, beta=180 → pitch=-90 ✓
+function smoothLin(prev, next, k=0.1) {
+  if (prev==null) return next;
+  return prev + k*(next-prev);
 }
 
-function worldToScreen(sunAz, sunAlt, camAz, camPitch, sw, sh, panH, topH){
-  const areaH = sh - panH - topH;
-  const cx = sw/2;
-  const cy = topH + areaH/2;
-
-  // Horizontal: azimuth difference (left/right)
-  let dAz = ((sunAz - camAz + 540) % 360) - 180; // -180..+180
-
-  // Vertical: elevation difference (up/down)
-  // positive dEl = sun is above where camera points → moves UP on screen → smaller Y
-  let dEl = sunAlt - camPitch;
-
-  const x = cx + (dAz / FOV_H) * sw;
-  const y = cy - (dEl / FOV_V) * areaH; // minus because Y increases downward
-
-  return { x, y, dAz, dEl };
+// Get the alpha to use in the rotation matrix
+// iOS: webkitCompassHeading is CW from N = compass bearing of screen-top
+//      alpha in the spec is CCW from N (mathematical), so alpha = 360 - compassHeading
+// Android: deviceorientationabsolute gives absolute alpha directly
+function getAlphaRad() {
+  if (rawCompass != null) {
+    // iOS webkitCompassHeading → spec alpha
+    return (360 - rawCompass) * D2R;
+  }
+  if (rawAlpha != null) return rawAlpha * D2R;
+  return 0;
 }
 
 // ══════════════════════════════════════════════════════
@@ -241,25 +309,35 @@ function worldToScreen(sunAz, sunAlt, camAz, camPitch, sw, sh, panH, topH){
 // ══════════════════════════════════════════════════════
 const cv = document.getElementById('ar');
 const ctx = cv.getContext('2d');
-function resize(){ cv.width=window.innerWidth; cv.height=window.innerHeight; }
-resize(); window.addEventListener('resize',resize);
+function resize() { cv.width = window.innerWidth; cv.height = window.innerHeight; }
+resize(); window.addEventListener('resize', resize);
 
-function drawFrame(sunAz, sunAlt, camAz, camPitch, date, lat, lon){
-  const sw=cv.width, sh=cv.height;
+// Camera FOV (typical rear wide camera)
+const FOV_H = 65, FOV_V = 50;
+
+function drawFrame(sunAz, sunAlt, alphaRad, betaRad, gammaRad, date, lat, lon) {
+  const sw = cv.width, sh = cv.height;
   ctx.clearRect(0,0,sw,sh);
 
-  const panH=document.getElementById('panel').offsetHeight||130;
-  const topH=36;
-  const areaH=sh-panH-topH;
-  const CX=sw/2, CY=topH+areaH/2;
+  const panH = document.getElementById('panel').offsetHeight || 130;
+  const topH = 36;
+  const areaH = sh - panH - topH;
+  const CX = sw/2, CY = topH + areaH/2;
 
-  const proj=(az,alt)=>worldToScreen(az,alt,camAz,camPitch,sw,sh,panH,topH);
+  // Build rotation matrix: Earth(ENU) → Device
+  const R = buildRotationMatrix(alphaRad, betaRad, gammaRad);
 
-  // ── CROSSHAIR (where camera is aiming) ──
+  // Helper: ENU point → screen pixel (or null if behind)
+  const proj = (az, alt) => {
+    const enu = azelToENU(az, alt);
+    const dev = rotVec(R, enu[0], enu[1], enu[2]);
+    return projectToScreen(dev, sw, sh, panH, topH, FOV_H, FOV_V);
+  };
+
+  // ── CROSSHAIR ──
   ctx.save();
-  ctx.strokeStyle='rgba(245,237,216,0.3)';
-  ctx.lineWidth=1;
-  const cs=20;
+  ctx.strokeStyle = 'rgba(245,237,216,0.3)'; ctx.lineWidth = 1;
+  const cs = 20;
   ctx.beginPath();
   ctx.moveTo(CX-cs,CY); ctx.lineTo(CX-7,CY);
   ctx.moveTo(CX+7,CY);  ctx.lineTo(CX+cs,CY);
@@ -267,156 +345,161 @@ function drawFrame(sunAz, sunAlt, camAz, camPitch, date, lat, lon){
   ctx.moveTo(CX,CY+7);  ctx.lineTo(CX,CY+cs);
   ctx.stroke();
   ctx.beginPath(); ctx.arc(CX,CY,16,0,Math.PI*2);
-  ctx.strokeStyle='rgba(245,237,216,0.12)'; ctx.stroke();
+  ctx.strokeStyle = 'rgba(245,237,216,0.1)'; ctx.stroke();
   ctx.restore();
 
-  // ── HORIZON LINE ──
-  // Horizon is at alt=0; Y position depends on camPitch
-  const horizonY = CY + (camPitch/FOV_V)*areaH;
-  if(horizonY > topH && horizonY < sh-panH){
+  // ── HORIZON LINE (az sweep at alt=0) ──
+  const hPts = [];
+  for (let a = 0; a <= 360; a += 3) {
+    const p = proj(a, 0);
+    if (p) hPts.push(p);
+  }
+  if (hPts.length > 1) {
     ctx.save();
-    ctx.strokeStyle='rgba(245,237,216,0.2)'; ctx.lineWidth=1; ctx.setLineDash([4,10]);
-    ctx.beginPath(); ctx.moveTo(0,horizonY); ctx.lineTo(sw,horizonY); ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.font='9px DM Mono'; ctx.fillStyle='rgba(245,237,216,0.3)';
-    ctx.fillText('HORIZONTE',8,horizonY-5);
-    ctx.restore();
+    ctx.strokeStyle = 'rgba(245,237,216,0.2)'; ctx.lineWidth = 1; ctx.setLineDash([4,8]);
+    ctx.beginPath(); ctx.moveTo(hPts[0].x, hPts[0].y);
+    for (const p of hPts) ctx.lineTo(p.x, p.y);
+    ctx.stroke(); ctx.setLineDash([]); ctx.restore();
   }
 
-  // ── CARDINAL LABELS on horizon ──
-  for(const[az,lbl] of[[0,'N'],[90,'L'],[180,'S'],[270,'O']]){
-    const p=proj(az,0);
-    if(p.x>10&&p.x<sw-10&&p.y>topH&&p.y<sh-panH){
-      ctx.save(); ctx.font='bold 12px DM Mono';
-      ctx.fillStyle='rgba(245,237,216,0.25)'; ctx.textAlign='center';
-      ctx.fillText(lbl,p.x,p.y+4); ctx.restore();
+  // ── CARDINAL LABELS ──
+  for (const [az, lbl] of [[0,'N'],[90,'L'],[180,'S'],[270,'O']]) {
+    const p = proj(az, 0);
+    if (p && p.x>10 && p.x<sw-10 && p.y>topH && p.y<sh-panH) {
+      ctx.save(); ctx.font = 'bold 12px DM Mono';
+      ctx.fillStyle = 'rgba(245,237,216,0.3)'; ctx.textAlign = 'center';
+      ctx.fillText(lbl, p.x, p.y+4); ctx.restore();
     }
   }
 
-  // ── SUN ARC — world-fixed, full day ──
-  const dayStart=new Date(date); dayStart.setHours(0,0,0,0);
-  const arcPts=[];
-  for(let m=0;m<=1440;m+=6){
-    const d=new Date(dayStart.getTime()+m*60000);
-    const s=sunPos(d,lat,lon);
-    const p=proj(s.az,s.alt);
-    arcPts.push({...p,alt:s.alt,min:m});
+  // ── SUN ARC — world fixed, projected through rotation matrix ──
+  const dayStart = new Date(date); dayStart.setHours(0,0,0,0);
+
+  // Collect all arc points (above and below horizon)
+  const arcAll = [];
+  for (let m = 0; m <= 1440; m += 8) {
+    const d = new Date(dayStart.getTime() + m*60000);
+    const s = sunPos(d, lat, lon);
+    const p = proj(s.az, s.alt);
+    arcAll.push({ p, alt: s.alt, min: m });
   }
 
-  // Below horizon — dashed dim
-  ctx.save(); ctx.strokeStyle='rgba(255,107,0,0.2)'; ctx.lineWidth=1.5; ctx.setLineDash([3,8]);
-  let open=false;
-  for(const p of arcPts){
-    if(p.alt<=0){
-      if(!open){ctx.beginPath();ctx.moveTo(p.x,p.y);open=true;}
-      else ctx.lineTo(p.x,p.y);
-    }else if(open){ctx.stroke();open=false;}
+  // Draw below-horizon section (dashed)
+  ctx.save(); ctx.strokeStyle = 'rgba(255,107,0,0.2)'; ctx.lineWidth = 1.5; ctx.setLineDash([3,8]);
+  let open = false;
+  for (const pt of arcAll) {
+    if (pt.alt <= 0 && pt.p) {
+      if (!open) { ctx.beginPath(); ctx.moveTo(pt.p.x, pt.p.y); open = true; }
+      else ctx.lineTo(pt.p.x, pt.p.y);
+    } else if (open) { ctx.stroke(); open = false; }
   }
-  if(open)ctx.stroke();
+  if (open) ctx.stroke();
   ctx.setLineDash([]); ctx.restore();
 
-  // Above horizon — solid golden
-  const above=arcPts.filter(p=>p.alt>0);
-  if(above.length>1){
-    ctx.save();
-    ctx.strokeStyle='rgba(255,184,0,0.7)'; ctx.lineWidth=2;
-    ctx.beginPath(); ctx.moveTo(above[0].x,above[0].y);
-    for(const p of above) ctx.lineTo(p.x,p.y);
+  // Draw above-horizon section (solid golden)
+  const above = arcAll.filter(pt => pt.alt > 0 && pt.p);
+  if (above.length > 1) {
+    ctx.save(); ctx.strokeStyle = 'rgba(255,184,0,0.7)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(above[0].p.x, above[0].p.y);
+    for (const pt of above) ctx.lineTo(pt.p.x, pt.p.y);
     ctx.stroke(); ctx.restore();
   }
 
   // Hourly dots + labels
-  for(let h=0;h<=23;h++){
-    const d=new Date(dayStart.getTime()+h*3600000);
-    const s=sunPos(d,lat,lon);
-    if(s.alt<=0) continue;
-    const p=proj(s.az,s.alt);
-    if(p.x<-20||p.x>sw+20||p.y<topH-20||p.y>sh-panH+20) continue;
+  for (let h = 0; h <= 23; h++) {
+    const d = new Date(dayStart.getTime() + h*3600000);
+    const s = sunPos(d, lat, lon);
+    if (s.alt <= 0) continue;
+    const p = proj(s.az, s.alt);
+    if (!p || p.x<-20||p.x>sw+20||p.y<topH-20||p.y>sh-panH+20) continue;
     ctx.save();
     ctx.beginPath(); ctx.arc(p.x,p.y,3,0,Math.PI*2);
-    ctx.fillStyle='rgba(255,184,0,0.7)'; ctx.fill();
-    ctx.font='8px DM Mono'; ctx.fillStyle='rgba(245,237,216,0.5)';
-    ctx.textAlign='center'; ctx.fillText(`${h}h`,p.x,p.y-9);
+    ctx.fillStyle = 'rgba(255,184,0,0.7)'; ctx.fill();
+    ctx.font = '8px DM Mono'; ctx.fillStyle = 'rgba(245,237,216,0.5)';
+    ctx.textAlign = 'center'; ctx.fillText(`${h}h`, p.x, p.y-9);
     ctx.restore();
   }
 
   // ── SUN MARKER ──
-  const sp=proj(sunAz,sunAlt);
-  const onScreen=sp.x>-60&&sp.x<sw+60&&sp.y>topH-60&&sp.y<sh-panH+60;
+  const sunENU = azelToENU(sunAz, sunAlt);
+  const sunDev = rotVec(R, sunENU[0], sunENU[1], sunENU[2]);
+  const sp = projectToScreen(sunDev, sw, sh, panH, topH, FOV_H, FOV_V);
 
-  if(onScreen){
-    // Glow rings
-    for(const[r,a] of[[72,.025],[50,.06],[32,.14],[20,.28]]){
-      const rg=ctx.createRadialGradient(sp.x,sp.y,0,sp.x,sp.y,r);
+  if (sp && sp.x > -80 && sp.x < sw+80 && sp.y > topH-80 && sp.y < sh-panH+80) {
+    // Glow
+    for (const [r,a] of [[72,.025],[50,.06],[32,.14],[20,.28]]) {
+      const rg = ctx.createRadialGradient(sp.x,sp.y,0,sp.x,sp.y,r);
       rg.addColorStop(0,`rgba(255,184,0,${a})`); rg.addColorStop(1,'rgba(255,184,0,0)');
       ctx.save(); ctx.fillStyle=rg; ctx.beginPath(); ctx.arc(sp.x,sp.y,r,0,Math.PI*2); ctx.fill(); ctx.restore();
     }
     // Core
-    const cg=ctx.createRadialGradient(sp.x,sp.y,0,sp.x,sp.y,16);
+    const cg = ctx.createRadialGradient(sp.x,sp.y,0,sp.x,sp.y,16);
     cg.addColorStop(0,'#FFFCE0'); cg.addColorStop(.4,'#FFB800');
     cg.addColorStop(.8,'#FF6B00'); cg.addColorStop(1,'rgba(255,107,0,0)');
     ctx.save(); ctx.fillStyle=cg; ctx.beginPath(); ctx.arc(sp.x,sp.y,16,0,Math.PI*2); ctx.fill(); ctx.restore();
 
     // Label
     ctx.save(); ctx.font='bold 10px DM Mono'; ctx.fillStyle='rgba(245,237,216,.9)';
-    ctx.textAlign='center'; ctx.fillText(`${Math.round(sunAlt)}° alt`,sp.x,sp.y-24); ctx.restore();
+    ctx.textAlign='center'; ctx.fillText(`${Math.round(sunAlt)}° alt`, sp.x, sp.y-24); ctx.restore();
 
-    // Drop line to horizon
-    if(sunAlt>0&&horizonY>topH&&horizonY<sh-panH){
-      ctx.save(); ctx.strokeStyle='rgba(255,184,0,.12)'; ctx.lineWidth=1; ctx.setLineDash([2,6]);
-      ctx.beginPath(); ctx.moveTo(sp.x,sp.y+18); ctx.lineTo(sp.x,horizonY);
-      ctx.stroke(); ctx.setLineDash([]); ctx.restore();
-    }
-
-    // Hit ring — sun is centered
-    const dist=Math.sqrt((sp.x-CX)**2+(sp.y-CY)**2);
-    if(dist<36){
+    // Hit indicator
+    const dist = Math.sqrt((sp.x-CX)**2 + (sp.y-CY)**2);
+    if (dist < 40) {
       ctx.save(); ctx.strokeStyle='rgba(57,255,122,.85)'; ctx.lineWidth=2;
-      ctx.beginPath(); ctx.arc(CX,CY,30,0,Math.PI*2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(CX,CY,32,0,Math.PI*2); ctx.stroke();
       ctx.font='bold 9px DM Mono'; ctx.fillStyle='rgba(57,255,122,.9)';
-      ctx.textAlign='center'; ctx.fillText('✓ SOL AQUI',CX,CY+46); ctx.restore();
+      ctx.textAlign='center'; ctx.fillText('✓ SOL AQUI', CX, CY+48); ctx.restore();
     }
   } else {
-    // Arrow pointing toward sun
-    const ang=Math.atan2(-(sp.y-CY),sp.x-CX);
-    const margin=52;
-    const ex=Math.max(margin,Math.min(sw-margin,CX+Math.cos(ang)*(sw*.42)));
-    const ey=Math.max(topH+margin,Math.min(sh-panH-margin,CY-Math.sin(ang)*(areaH*.42)));
+    // Off-screen: compute direction from screen center to where sun would be
+    // Use device-frame vector directly for direction hint
+    const [ddx, ddy, ddz] = sunDev;
+    // If ddz <= 0, sun is behind us; direction is reversed
+    const behind = ddz <= 0;
+    const hints = [];
+    if (behind) hints.push('☀ SOL ATRÁS');
+    else {
+      if (ddx < -0.5) hints.push(`◀ ${Math.round(Math.abs(Math.atan2(ddx,ddz)*R2D))}° esq`);
+      if (ddx >  0.5) hints.push(`${Math.round(Math.atan2(ddx,ddz)*R2D)}° dir ▶`);
+      if (ddy >  0.3) hints.push(`▲ ${Math.round(Math.atan2(ddy,ddz)*R2D)}° cima`);
+      if (ddy < -0.3) hints.push(`▼ ${Math.round(Math.abs(Math.atan2(ddy,ddz))*R2D)}° baixo`);
+    }
 
-    ctx.save();
-    ctx.translate(ex,ey);
-    ctx.rotate(-ang);
-    ctx.fillStyle='rgba(255,184,0,.9)';
-    ctx.beginPath(); ctx.moveTo(22,0); ctx.lineTo(0,-9); ctx.lineTo(0,9); ctx.closePath(); ctx.fill();
-    const mg=ctx.createRadialGradient(30,0,0,30,0,9);
+    // Draw arrow toward sun
+    const targetX = sp ? sp.x : (ddx > 0 ? sw+100 : -100);
+    const targetY = sp ? sp.y : (ddy < 0 ? sh+100 : -100);
+    const ang = Math.atan2(targetY - CY, targetX - CX);
+    const margin = 55;
+    const ex = Math.max(margin, Math.min(sw-margin, CX + Math.cos(ang)*(sw*.4)));
+    const ey = Math.max(topH+margin, Math.min(sh-panH-margin, CY + Math.sin(ang)*(areaH*.4)));
+
+    ctx.save(); ctx.translate(ex,ey); ctx.rotate(ang);
+    ctx.fillStyle = 'rgba(255,184,0,.9)';
+    ctx.beginPath(); ctx.moveTo(20,0); ctx.lineTo(0,-8); ctx.lineTo(0,8); ctx.closePath(); ctx.fill();
+    const mg = ctx.createRadialGradient(28,0,0,28,0,9);
     mg.addColorStop(0,'#FFF5CC'); mg.addColorStop(1,'#FF6B00');
-    ctx.fillStyle=mg; ctx.beginPath(); ctx.arc(30,0,9,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle=mg; ctx.beginPath(); ctx.arc(28,0,9,0,Math.PI*2); ctx.fill();
     ctx.restore();
 
-    // Direction hint
-    ctx.save(); ctx.font='10px DM Mono'; ctx.fillStyle='rgba(255,184,0,.85)';
-    const hints=[];
-    if(sp.dAz < -FOV_H/2) hints.push(`◀ ${Math.round(-sp.dAz)}° esq`);
-    if(sp.dAz >  FOV_H/2) hints.push(`${Math.round(sp.dAz)}° dir ▶`);
-    if(sp.dEl >  FOV_V/2) hints.push(`▲ ${Math.round(sp.dEl)}° cima`);
-    if(sp.dEl < -FOV_V/2) hints.push(`▼ ${Math.round(-sp.dEl)}° baixo`);
-    ctx.textAlign='center'; ctx.fillText(hints.join('  '),CX,sh-panH-20);
-    ctx.restore();
+    if (hints.length) {
+      ctx.save(); ctx.font='10px DM Mono'; ctx.fillStyle='rgba(255,184,0,.85)';
+      ctx.textAlign='center'; ctx.fillText(hints.join('  '), CX, sh-panH-18); ctx.restore();
+    }
   }
 }
 
 // ══════════════════════════════════════════════════════
 // TIMELINE
 // ══════════════════════════════════════════════════════
-function updateTL(date,t){
-  if(!t.sr||!t.ss)return;
-  const p=Math.max(0,Math.min(1,(date-t.sr)/(t.ss-t.sr)));
-  document.getElementById('tlp').style.width=p*100+'%';
-  document.getElementById('tld').style.left=p*100+'%';
+function updateTL(date, t) {
+  if (!t.sr||!t.ss) return;
+  const p = Math.max(0,Math.min(1,(date-t.sr)/(t.ss-t.sr)));
+  document.getElementById('tlp').style.width = p*100+'%';
+  document.getElementById('tld').style.left = p*100+'%';
   document.querySelectorAll('.tlm').forEach(e=>e.remove());
-  const tl=document.getElementById('tl');
-  for(const[pct,lbl] of[[0,fmt(t.sr)],[50,fmt(t.noon)],[100,fmt(t.ss)]]){
-    const m=document.createElement('div');
+  const tl = document.getElementById('tl');
+  for (const [pct,lbl] of [[0,fmt(t.sr)],[50,fmt(t.noon)],[100,fmt(t.ss)]]) {
+    const m = document.createElement('div');
     m.className='tlm'; m.style.left=pct+'%'; m.textContent=lbl; tl.appendChild(m);
   }
 }
@@ -424,161 +507,172 @@ function updateTL(date,t){
 // ══════════════════════════════════════════════════════
 // MAIN LOOP
 // ══════════════════════════════════════════════════════
-function loop(){
-  if(!running||!GPS){requestAnimationFrame(loop);return;}
+function loop() {
+  if (!running||!GPS) { requestAnimationFrame(loop); return; }
 
-  // Smooth sensors
-  if(rawHeading!=null) sHdg=smoothAngle(sHdg,rawHeading,0.12);
-  sBeta=smoothLin(sBeta,rawBeta,0.12);
+  // Smooth raw sensors
+  if (rawCompass != null) sAlpha = rawCompass; // use compass directly, don't smooth angle for now (handled in getAlphaRad)
+  sBeta  = smoothLin(sBeta,  rawBeta,  0.15);
+  sGamma = smoothLin(sGamma, rawGamma, 0.15);
 
-  const camAz=sHdg??0;
-  const camPitch=betaToPitch(sBeta);
+  const alphaRad = getAlphaRad();
+  const betaRad  = sBeta  * D2R;
+  const gammaRad = sGamma * D2R;
 
-  const now=new Date();
-  const date=simDate?new Date(simDate.getFullYear(),simDate.getMonth(),simDate.getDate(),
-    simDate.getHours(),simDate.getMinutes(),0):now;
+  const now = new Date();
+  const date = simDate
+    ? new Date(simDate.getFullYear(),simDate.getMonth(),simDate.getDate(),simDate.getHours(),simDate.getMinutes(),0)
+    : now;
 
-  const{alt,az}=sunPos(date,GPS.lat,GPS.lon);
-  const times=sunTimes(date,GPS.lat,GPS.lon);
+  const {alt, az} = sunPos(date, GPS.lat, GPS.lon);
+  const times = sunTimes(date, GPS.lat, GPS.lon);
 
-  // Stats
-  document.getElementById('sv-az').textContent=Math.round(az)+'°';
-  document.getElementById('sv-alt').textContent=(alt>=0?'+':'')+Math.round(alt)+'°';
-  document.getElementById('sv-sr').textContent=fmt(times.sr);
-  document.getElementById('sv-ss').textContent=fmt(times.ss);
-  document.getElementById('tb-time').textContent=
+  // Update UI
+  document.getElementById('sv-az').textContent  = Math.round(az)+'°';
+  document.getElementById('sv-alt').textContent = (alt>=0?'+':'')+Math.round(alt)+'°';
+  document.getElementById('sv-sr').textContent  = fmt(times.sr);
+  document.getElementById('sv-ss').textContent  = fmt(times.ss);
+  document.getElementById('tb-time').textContent =
     `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
-  document.getElementById('tb-date').textContent=
+  document.getElementById('tb-date').textContent =
     `${String(date.getDate()).padStart(2,'0')} ${MON[date.getMonth()]} ${date.getFullYear()}${simDate?' '+fmt(date):''}`;
-  document.getElementById('tb-loc').textContent=
+  document.getElementById('tb-loc').textContent =
     `${GPS.lat.toFixed(4)}°${GPS.lat>=0?'N':'S'} ${Math.abs(GPS.lon).toFixed(4)}°${GPS.lon>=0?'L':'O'}`;
-  document.getElementById('tb-sensors').textContent=
-    `HDG ${Math.round(camAz)}° | PITCH ${Math.round(camPitch)}°`;
+  document.getElementById('tb-dbg').textContent =
+    `α${rawCompass!=null?Math.round(rawCompass)+'(cmp)':Math.round(rawAlpha??0)} β${Math.round(rawBeta)} γ${Math.round(rawGamma)}`;
 
-  drawFrame(az,alt,camAz,camPitch,date,GPS.lat,GPS.lon);
-  updateTL(date,times);
+  drawFrame(az, alt, alphaRad, betaRad, gammaRad, date, GPS.lat, GPS.lon);
+  updateTL(date, times);
   requestAnimationFrame(loop);
 }
 
 // ══════════════════════════════════════════════════════
 // ORIENTATION
 // ══════════════════════════════════════════════════════
-function listenOrientation(){
-  window.addEventListener('deviceorientation',e=>{
-    if(e.webkitCompassHeading!=null){
-      rawHeading=e.webkitCompassHeading;
-      document.getElementById('bg-comp').textContent='BÚSSOLA OK';
-      document.getElementById('bg-comp').className='badge ok';
+function listenOrientation() {
+  window.addEventListener('deviceorientation', e => {
+    if (e.webkitCompassHeading != null) {
+      rawCompass = e.webkitCompassHeading;
+      document.getElementById('bg-comp').textContent = 'BÚSSOLA OK';
+      document.getElementById('bg-comp').className   = 'badge ok';
     }
-    if(e.beta!=null)  rawBeta=e.beta;
-    if(e.gamma!=null) rawGamma=e.gamma;
-  },{passive:true});
+    if (e.alpha != null) rawAlpha = e.alpha;
+    if (e.beta  != null) rawBeta  = e.beta;
+    if (e.gamma != null) rawGamma = e.gamma;
+  }, { passive: true });
 
-  window.addEventListener('deviceorientationabsolute',e=>{
-    if(e.alpha!=null){
-      rawHeading=(360-e.alpha)%360;
-      document.getElementById('bg-comp').textContent='BÚSSOLA OK';
-      document.getElementById('bg-comp').className='badge ok';
+  window.addEventListener('deviceorientationabsolute', e => {
+    if (e.alpha != null) {
+      rawAlpha = e.alpha;
+      if (rawCompass == null) { // Android fallback
+        rawCompass = null; // let it use alpha directly
+        document.getElementById('bg-comp').textContent = 'BÚSSOLA OK';
+        document.getElementById('bg-comp').className   = 'badge ok';
+      }
     }
-    if(e.beta!=null)  rawBeta=e.beta;
-    if(e.gamma!=null) rawGamma=e.gamma;
-  },{passive:true});
+    if (e.beta  != null) rawBeta  = e.beta;
+    if (e.gamma != null) rawGamma = e.gamma;
+  }, { passive: true });
 
-  setTimeout(()=>{
-    if(rawHeading==null){
-      document.getElementById('bg-comp').textContent='SEM BÚSSOLA';
-      document.getElementById('bg-comp').className='badge err';
+  setTimeout(() => {
+    if (rawCompass == null && rawAlpha == null) {
+      document.getElementById('bg-comp').textContent = 'SEM BÚSSOLA';
+      document.getElementById('bg-comp').className   = 'badge err';
     }
-  },3000);
+  }, 3000);
 }
 
 // ══════════════════════════════════════════════════════
 // START
 // ══════════════════════════════════════════════════════
-document.getElementById('startbtn').addEventListener('click',async function(){
-  const err=document.getElementById('permerr');
-  err.style.display='none';
+document.getElementById('startbtn').addEventListener('click', async function() {
+  const err = document.getElementById('permerr');
+  err.style.display = 'none';
 
-  // iOS orientation permission — must be inside click handler
-  if(typeof DeviceOrientationEvent!=='undefined'&&
-     typeof DeviceOrientationEvent.requestPermission==='function'){
-    try{
-      const state=await DeviceOrientationEvent.requestPermission();
-      if(state!=='granted'){
-        err.textContent='Permissão de bússola negada. Vá em Ajustes > Safari > Movimento & Orientação.';
-        err.style.display='block';
+  // iOS: must request permission inside click handler
+  if (typeof DeviceOrientationEvent !== 'undefined' &&
+      typeof DeviceOrientationEvent.requestPermission === 'function') {
+    try {
+      const state = await DeviceOrientationEvent.requestPermission();
+      if (state !== 'granted') {
+        err.textContent = 'Permissão de bússola negada. Vá em Ajustes > Safari > Movimento & Orientação.';
+        err.style.display = 'block';
       }
-    }catch(e){console.warn(e);}
+    } catch(e) { console.warn(e); }
   }
 
   // Camera
-  try{
-    const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:{ideal:1920}}});
-    document.getElementById('vid').srcObject=stream;
-  }catch(e){}
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment', width: { ideal: 1920 } }
+    });
+    document.getElementById('vid').srcObject = stream;
+  } catch(e) {}
 
   // GPS
-  try{
-    await new Promise((res,rej)=>{
-      navigator.geolocation.getCurrentPosition(p=>{
-        GPS={lat:p.coords.latitude,lon:p.coords.longitude};
-        document.getElementById('bg-gps').textContent='GPS OK';
-        document.getElementById('bg-gps').className='badge ok';
+  try {
+    await new Promise((res,rej) => {
+      navigator.geolocation.getCurrentPosition(p => {
+        GPS = { lat: p.coords.latitude, lon: p.coords.longitude };
+        document.getElementById('bg-gps').textContent = 'GPS OK';
+        document.getElementById('bg-gps').className   = 'badge ok';
         res();
-      },rej,{enableHighAccuracy:true,timeout:12000});
+      }, rej, { enableHighAccuracy: true, timeout: 12000 });
     });
-    navigator.geolocation.watchPosition(p=>{GPS={lat:p.coords.latitude,lon:p.coords.longitude}},null,{enableHighAccuracy:true});
-  }catch(e){
-    err.textContent='GPS negado. Habilite a localização e recarregue.';
-    err.style.display='block'; return;
+    navigator.geolocation.watchPosition(p => {
+      GPS = { lat: p.coords.latitude, lon: p.coords.longitude };
+    }, null, { enableHighAccuracy: true });
+  } catch(e) {
+    err.textContent = 'GPS negado. Habilite a localização e recarregue.';
+    err.style.display = 'block'; return;
   }
 
   listenOrientation();
 
-  document.getElementById('perm').style.opacity='0';
-  setTimeout(()=>document.getElementById('perm').style.display='none',500);
-  running=true;
+  document.getElementById('perm').style.opacity = '0';
+  setTimeout(() => document.getElementById('perm').style.display = 'none', 500);
+  running = true;
   loop();
 });
 
 // ══════════════════════════════════════════════════════
-// DATE/TIME PICKER
+// DATE / TIME PICKER
 // ══════════════════════════════════════════════════════
-const pwrap=document.getElementById('pwrap');
-const inpDate=document.getElementById('inp-date');
-const inpTime=document.getElementById('inp-time');
-const n=new Date();
-inpDate.value=n.toISOString().split('T')[0];
-inpTime.value=`${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`;
+const pwrap = document.getElementById('pwrap');
+const inpDate = document.getElementById('inp-date');
+const inpTime = document.getElementById('inp-time');
+const n0 = new Date();
+inpDate.value = n0.toISOString().split('T')[0];
+inpTime.value = `${String(n0.getHours()).padStart(2,'0')}:${String(n0.getMinutes()).padStart(2,'0')}`;
 
-document.getElementById('pick-btn').addEventListener('click',()=>{
-  pwrap.style.display=pwrap.style.display==='flex'?'none':'flex';
+document.getElementById('pick-btn').addEventListener('click', () => {
+  pwrap.style.display = pwrap.style.display === 'flex' ? 'none' : 'flex';
 });
 
-function applyPicker(){
-  if(inpDate.value){
-    const[y,mo,d]=inpDate.value.split('-').map(Number);
-    const[h,mi]=inpTime.value?inpTime.value.split(':').map(Number):[12,0];
-    simDate=new Date(y,mo-1,d,h,mi,0);
-    document.getElementById('pick-btn').textContent=
+function applyPicker() {
+  if (inpDate.value) {
+    const [y,mo,d] = inpDate.value.split('-').map(Number);
+    const [h,mi]   = inpTime.value ? inpTime.value.split(':').map(Number) : [12,0];
+    simDate = new Date(y, mo-1, d, h, mi, 0);
+    document.getElementById('pick-btn').textContent =
       `📅 ${String(simDate.getDate()).padStart(2,'0')} ${MON[simDate.getMonth()]} ${fmt(simDate)}`;
   }
-  pwrap.style.display='none';
+  pwrap.style.display = 'none';
 }
-inpDate.addEventListener('change',applyPicker);
-inpTime.addEventListener('change',applyPicker);
+inpDate.addEventListener('change', applyPicker);
+inpTime.addEventListener('change', applyPicker);
 
-document.getElementById('pnow').addEventListener('click',()=>{
-  simDate=null;
-  document.getElementById('pick-btn').textContent='📅 DATA / HORA';
-  pwrap.style.display='none';
-  const n=new Date();
-  inpDate.value=n.toISOString().split('T')[0];
-  inpTime.value=`${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`;
+document.getElementById('pnow').addEventListener('click', () => {
+  simDate = null;
+  document.getElementById('pick-btn').textContent = '📅 DATA / HORA';
+  pwrap.style.display = 'none';
+  const n = new Date();
+  inpDate.value = n.toISOString().split('T')[0];
+  inpTime.value = `${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`;
 });
-document.getElementById('now-btn').addEventListener('click',()=>{
-  simDate=null;
-  document.getElementById('pick-btn').textContent='📅 DATA / HORA';
+document.getElementById('now-btn').addEventListener('click', () => {
+  simDate = null;
+  document.getElementById('pick-btn').textContent = '📅 DATA / HORA';
 });
 </script>
 </body>
