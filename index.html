@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Solar Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{--sun:#FFB800;--glow:#FF6B00;--txt:#F5EDD8;--dim:rgba(245,237,216,.45);--panel:rgba(6,4,1,.88);--ok:#39FF7A}
+body{background:#0a0804;color:var(--txt);font-family:'DM Mono',monospace;height:100dvh;overflow:hidden;user-select:none}
+#vid{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
+#ar{position:fixed;inset:0;width:100%;height:100%;z-index:2;pointer-events:none}
+
+#perm{position:fixed;inset:0;z-index:100;background:#0a0804;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:40px;transition:opacity .5s}
+.picon{font-size:60px;animation:bob 3s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+#perm h1{font-family:'Bebas Neue';font-size:52px;color:var(--sun);letter-spacing:.06em;text-align:center;line-height:.9}
+#perm p{font-size:10px;letter-spacing:.2em;color:var(--dim);text-align:center;line-height:2;max-width:280px}
+#startbtn{background:none;border:1px solid var(--sun);color:var(--sun);font-family:'DM Mono';font-size:11px;letter-spacing:.28em;text-transform:uppercase;padding:14px 40px;border-radius:2px;cursor:pointer;margin-top:6px}
+#startbtn:active{background:rgba(255,184,0,.1)}
+#permerr{font-size:9px;color:#FF3B3B;letter-spacing:.15em;text-align:center;display:none;line-height:1.8;max-width:280px}
+
+#badges{position:fixed;top:10px;left:0;right:0;z-index:20;display:flex;justify-content:center;gap:6px;pointer-events:none}
+.badge{font-size:8px;letter-spacing:.15em;padding:3px 10px;border-radius:10px;backdrop-filter:blur(6px)}
+.ok{background:rgba(57,255,122,.12);color:var(--ok);border:1px solid rgba(57,255,122,.3)}
+.warn{background:rgba(255,184,0,.12);color:var(--sun);border:1px solid rgba(255,184,0,.3)}
+.err{background:rgba(255,59,59,.12);color:#FF3B3B;border:1px solid rgba(255,59,59,.3)}
+
+#topbar{position:fixed;top:36px;left:0;right:0;z-index:10;display:flex;justify-content:space-between;padding:6px 14px;pointer-events:none}
+#tb-l{display:flex;flex-direction:column;gap:2px}
+#tb-r{display:flex;flex-direction:column;align-items:flex-end;gap:2px}
+#tb-date{font-family:'Bebas Neue';font-size:11px;letter-spacing:.25em;color:var(--dim)}
+#tb-dbg{font-size:8px;color:var(--sun);letter-spacing:.06em;line-height:1.5}
+#tb-time{font-family:'Bebas Neue';font-size:24px;line-height:1}
+#tb-loc{font-size:8px;letter-spacing:.1em;color:var(--dim)}
+
+#controls{position:fixed;bottom:150px;left:50%;transform:translateX(-50%);z-index:15;display:flex;gap:10px}
+.cbtn{background:var(--panel);border:1px solid rgba(255,184,0,.2);color:var(--sun);font-family:'DM Mono';font-size:9px;letter-spacing:.18em;padding:7px 12px;border-radius:3px;cursor:pointer;backdrop-filter:blur(10px);white-space:nowrap}
+.cbtn:active{background:rgba(255,184,0,.1)}
+#pwrap{position:fixed;bottom:196px;left:50%;transform:translateX(-50%);z-index:16;display:none;background:var(--panel);border:1px solid rgba(255,184,0,.2);border-radius:6px;padding:14px 18px;backdrop-filter:blur(14px);flex-direction:column;gap:12px;min-width:260px}
+.prow{display:flex;flex-direction:column;gap:4px}
+.plbl{font-size:8px;letter-spacing:.2em;color:var(--dim)}
+.pinp{background:none;border:none;border-bottom:1px solid rgba(255,184,0,.3);color:var(--txt);font-family:'DM Mono';font-size:14px;outline:none;color-scheme:dark;padding:2px 0;width:100%}
+#pnow{background:none;border:1px solid rgba(255,184,0,.3);color:var(--sun);font-family:'DM Mono';font-size:9px;letter-spacing:.2em;padding:6px;border-radius:2px;cursor:pointer;text-align:center;text-transform:uppercase}
+
+#panel{position:fixed;bottom:0;left:0;right:0;z-index:10;background:var(--panel);backdrop-filter:blur(20px);border-top:1px solid rgba(255,184,0,.12);padding:12px 16px 28px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}
+.st{display:flex;flex-direction:column;gap:1px}
+.stl{font-size:7px;letter-spacing:.18em;color:var(--dim);text-transform:uppercase}
+.stv{font-family:'Bebas Neue';font-size:20px;line-height:1}
+.stv.hi{color:var(--sun)}
+#tl{position:relative;height:28px}
+#tlb{position:absolute;left:0;right:0;top:50%;height:1px;background:rgba(245,237,216,.1);transform:translateY(-50%)}
+#tlp{position:absolute;left:0;top:50%;height:1px;background:linear-gradient(90deg,var(--glow),var(--sun));transform:translateY(-50%)}
+#tld{position:absolute;top:50%;transform:translate(-50%,-50%);width:8px;height:8px;border-radius:50%;background:var(--sun);box-shadow:0 0 8px var(--sun)}
+.tlm{position:absolute;font-size:7px;letter-spacing:.1em;color:var(--dim);transform:translateX(-50%);top:2px;white-space:nowrap}
+</style>
+</head>
+<body>
+
+<div id="perm">
+  <div class="picon">☀️</div>
+  <h1>SOLAR<br>TRACKER</h1>
+  <p>APONTE O CELULAR PARA O CÉU<br>E VEJA ONDE O SOL ESTARÁ<br>EM QUALQUER DIA E HORÁRIO</p>
+  <button id="startbtn">INICIAR</button>
+  <div id="permerr"></div>
+</div>
+
+<video id="vid" autoplay playsinline muted></video>
+<canvas id="ar"></canvas>
+
+<div id="badges">
+  <div class="badge warn" id="bg-gps">GPS…</div>
+  <div class="badge warn" id="bg-comp">BÚSSOLA…</div>
+</div>
+
+<div id="topbar">
+  <div id="tb-l">
+    <div id="tb-date">—</div>
+    <div id="tb-dbg">—</div>
+  </div>
+  <div id="tb-r">
+    <div id="tb-time">--:--:--</div>
+    <div id="tb-loc">—</div>
+  </div>
+</div>
+
+<div id="controls">
+  <button class="cbtn" id="pick-btn">📅 DATA / HORA</button>
+  <button class="cbtn" id="now-btn">⟳ AGORA</button>
+</div>
+
+<div id="pwrap">
+  <div class="prow"><span class="plbl">DATA</span><input class="pinp" type="date" id="inp-date"></div>
+  <div class="prow"><span class="plbl">HORÁRIO</span><input class="pinp" type="time" id="inp-time"></div>
+  <div id="pnow">Usar agora</div>
+</div>
+
+<div id="panel">
+  <div class="g4">
+    <div class="st"><span class="stl">AZIMUTE ☀</span><span class="stv hi" id="sv-az">—</span></div>
+    <div class="st"><span class="stl">ALTITUDE ☀</span><span class="stv" id="sv-alt">—</span></div>
+    <div class="st"><span class="stl">NASCER</span><span class="stv" id="sv-sr" style="font-size:15px">—</span></div>
+    <div class="st"><span class="stl">PÔR</span><span class="stv" id="sv-ss" style="font-size:15px">—</span></div>
+  </div>
+  <div id="tl"><div id="tlb"></div><div id="tlp"></div><div id="tld"></div></div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════
+// QUATERNION (minimal, no deps)
+// q = [x, y, z, w]
+// ═══════════════════════════════════════════════════
+const Q = {
+  id:  ()=>[0,0,0,1],
+  mul: (a,b)=>[
+    a[3]*b[0]+a[0]*b[3]+a[1]*b[2]-a[2]*b[1],
+    a[3]*b[1]-a[0]*b[2]+a[1]*b[3]+a[2]*b[0],
+    a[3]*b[2]+a[0]*b[1]-a[1]*b[0]+a[2]*b[3],
+    a[3]*b[3]-a[0]*b[0]-a[1]*b[1]-a[2]*b[2]
+  ],
+  // from Euler YXZ: e = [ex=beta, ey=alpha, ez=-gamma]
+  fromEulerYXZ: (ex,ey,ez)=>{
+    const c1=Math.cos(ex/2),s1=Math.sin(ex/2);
+    const c2=Math.cos(ey/2),s2=Math.sin(ey/2);
+    const c3=Math.cos(ez/2),s3=Math.sin(ez/2);
+    // YXZ order
+    return [
+      s1*c2*c3+c1*s2*s3,
+      c1*s2*c3-s1*c2*s3,
+      c1*c2*s3-s1*s2*c3,
+      c1*c2*c3+s1*s2*s3
+    ];
+  },
+  fromAxisAngle: (ax,ay,az,angle)=>{
+    const s=Math.sin(angle/2);
+    return [ax*s,ay*s,az*s,Math.cos(angle/2)];
+  },
+  norm: q=>{
+    const l=Math.sqrt(q[0]**2+q[1]**2+q[2]**2+q[3]**2)||1;
+    return [q[0]/l,q[1]/l,q[2]/l,q[3]/l];
+  },
+  conj: q=>[-q[0],-q[1],-q[2],q[3]],
+  // rotate vector by quaternion
+  rotVec: (q,vx,vy,vz)=>{
+    const [qx,qy,qz,qw]=q;
+    const tx=2*(qy*vz-qz*vy);
+    const ty=2*(qz*vx-qx*vz);
+    const tz=2*(qx*vy-qy*vx);
+    return [vx+qw*tx+qy*tz-qz*ty, vy+qw*ty+qz*tx-qx*tz, vz+qw*tz+qx*ty-qy*tx];
+  },
+  // SLERP
+  slerp: (a,b,t)=>{
+    let dot=a[0]*b[0]+a[1]*b[1]+a[2]*b[2]+a[3]*b[3];
+    let [bx,by,bz,bw]=[...b];
+    if(dot<0){dot=-dot;bx=-bx;by=-by;bz=-bz;bw=-bw;}
+    if(dot>0.9995){
+      return Q.norm([a[0]+(bx-a[0])*t,a[1]+(by-a[1])*t,a[2]+(bz-a[2])*t,a[3]+(bw-a[3])*t]);
+    }
+    const th=Math.acos(dot), sth=Math.sin(th);
+    const f0=Math.sin((1-t)*th)/sth, f1=Math.sin(t*th)/sth;
+    return [a[0]*f0+bx*f1,a[1]*f0+by*f1,a[2]*f0+bz*f1,a[3]*f0+bw*f1];
+  }
+};
+
+// ═══════════════════════════════════════════════════
+// EXACT Three.js DeviceOrientationControls quaternion
+// euler.set(beta, alpha, -gamma, 'YXZ')
+// q *= q1  (q1 = [-√0.5,0,0,√0.5])
+// q *= qz(-screenOrient)
+// ═══════════════════════════════════════════════════
+const Q1 = [-Math.SQRT1_2, 0, 0, Math.SQRT1_2]; // -PI/2 around X
+
+function deviceQuat(alphaRad, betaRad, gammaRad, screenOrientRad) {
+  // euler YXZ with (beta, alpha, -gamma)
+  let q = Q.fromEulerYXZ(betaRad, alphaRad, -gammaRad);
+  q = Q.mul(q, Q1);
+  const qz = Q.fromAxisAngle(0,0,1,-screenOrientRad);
+  q = Q.mul(q, qz);
+  return Q.norm(q);
+}
+
+// ═══════════════════════════════════════════════════
+// World vector → Camera local → Screen
+// Three.js world: Y=up, X=right, Z=toward viewer
+// Camera looks along -Z (into scene)
+// Sun world vector from azimuth/altitude:
+//   az=0=North=-Z, az=90=East=+X, up=+Y
+// ═══════════════════════════════════════════════════
+function azelToWorld(azDeg, altDeg) {
+  const az=azDeg*D2R, alt=altDeg*D2R;
+  return [
+     Math.sin(az)*Math.cos(alt),  // X = East
+     Math.sin(alt),               // Y = Up
+    -Math.cos(az)*Math.cos(alt)   // Z = -North (Three.js: North is -Z)
+  ];
+}
+
+// Given camera quaternion (=what Three.js camera.quaternion would be),
+// transform world point to camera space and project to screen.
+function worldToScreen(camQ, wx, wy, wz, sw, sh, panH, topH, fovH, fovV) {
+  // Camera space = rotate world vector by inverse(camQ)
+  const [cx,cy,cz] = Q.rotVec(Q.conj(camQ), wx, wy, wz);
+  // Three.js camera looks along -Z: visible if cz < 0
+  if(cz >= 0) return null;
+  const depth = -cz;
+  const areaH = sh-panH-topH;
+  const CX=sw/2, CY=topH+areaH/2;
+  const fH=Math.tan(fovH/2*D2R);
+  const fV=Math.tan(fovV/2*D2R);
+  return {
+    x: CX + (cx/depth)*(sw/2)/fH,
+    y: CY - (cy/depth)*(areaH/2)/fV,  // minus: Y-up → screen Y-down
+    cx,cy,cz
+  };
+}
+
+// ═══════════════════════════════════════════════════
+// SUN MATH (NOAA SPA)
+// ═══════════════════════════════════════════════════
+const D2R=Math.PI/180, R2D=180/Math.PI;
+
+function sunPos(date,lat,lon){
+  const JD=date.getTime()/86400000+2440587.5,JC=(JD-2451545)/36525;
+  let L0=(280.46646+JC*(36000.76983+JC*0.0003032))%360;if(L0<0)L0+=360;
+  let M=(357.52911+JC*(35999.05029-0.0001537*JC))%360;if(M<0)M+=360;
+  const mr=M*D2R;
+  const C=(1.914602-JC*(0.004817+0.000014*JC))*Math.sin(mr)+(0.019993-0.000101*JC)*Math.sin(2*mr)+0.000289*Math.sin(3*mr);
+  const SL=L0+C,om=125.04-1934.136*JC,lam=SL-0.00569-0.00478*Math.sin(om*D2R);
+  const eps=(23+(26+(21.448-JC*(46.815+JC*(0.00059-JC*0.001813)))/60)/60)+0.00256*Math.cos(om*D2R);
+  const sinDec=Math.sin(eps*D2R)*Math.sin(lam*D2R),dec=Math.asin(sinDec);
+  const y=Math.tan(eps*D2R/2)**2;
+  const EqT=R2D*(y*Math.sin(2*L0*D2R)-2*0.016708634*Math.sin(mr)+4*0.016708634*y*Math.sin(mr)*Math.cos(2*L0*D2R)-0.5*y*y*Math.sin(4*L0*D2R)-1.25*0.016708634**2*Math.sin(2*mr))*4;
+  const minUTC=date.getUTCHours()*60+date.getUTCMinutes()+date.getUTCSeconds()/60;
+  const TST=minUTC+EqT+4*lon;
+  let HA=(TST/4)-180;if(HA<-180)HA+=360;
+  const har=HA*D2R,latr=lat*D2R;
+  const sinAlt=Math.sin(latr)*Math.sin(dec)+Math.cos(latr)*Math.cos(dec)*Math.cos(har);
+  const alt=Math.asin(Math.max(-1,Math.min(1,sinAlt)))*R2D;
+  const cosAz=(Math.sin(dec)-Math.sin(latr)*sinAlt)/(Math.cos(latr)*Math.cos(Math.asin(sinAlt)));
+  let az=Math.acos(Math.max(-1,Math.min(1,cosAz)))*R2D;
+  if(HA>0)az=360-az;
+  return{alt,az};
+}
+
+function sunTimes(date,lat,lon){
+  const JD=date.getTime()/86400000+2440587.5,JC=(JD-2451545)/36525;
+  let L0=(280.46646+JC*36000.76983)%360;if(L0<0)L0+=360;
+  let M=(357.52911+JC*35999.05029)%360;if(M<0)M+=360;
+  const mr=M*D2R;
+  const C=(1.914602-JC*0.004817)*Math.sin(mr)+(0.019993-0.000101*JC)*Math.sin(2*mr);
+  const SL=L0+C,om=125.04-1934.136*JC,lam=SL-0.00569-0.00478*Math.sin(om*D2R);
+  const eps=(23+(26+(21.448-JC*46.815)/60)/60)+0.00256*Math.cos(om*D2R);
+  const sinDec=Math.sin(eps*D2R)*Math.sin(lam*D2R),dec=Math.asin(sinDec);
+  const y=Math.tan(eps*D2R/2)**2;
+  const EqT=R2D*(y*Math.sin(2*L0*D2R)-2*0.016708634*Math.sin(mr))*4;
+  const cosHA=(Math.cos(90.833*D2R)-Math.sin(lat*D2R)*Math.sin(dec))/(Math.cos(lat*D2R)*Math.cos(dec));
+  if(Math.abs(cosHA)>1)return{sr:null,ss:null,noon:null};
+  const HA=Math.acos(cosHA)*R2D,noon=720-4*lon-EqT;
+  const mk=m=>{const d=new Date(date);d.setUTCHours(0,0,0,0);d.setTime(d.getTime()+m*60000);return d};
+  return{sr:mk(noon-HA*4),ss:mk(noon+HA*4),noon:mk(noon)};
+}
+
+const fmt=d=>d?`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`:'--:--';
+const MON=['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
+
+// ═══════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════
+let GPS=null, running=false, simDate=null;
+let rawAlpha=null, rawBeta=90, rawGamma=0, rawCompass=null;
+let screenOrientDeg=0;
+
+// Smoothed camera quaternion (SLERP)
+let camQ=[0,0,0,1];
+const SLERP_K=0.12; // lower = smoother but laggier
+
+// ═══════════════════════════════════════════════════
+// CANVAS
+// ═══════════════════════════════════════════════════
+const cv=document.getElementById('ar'),ctx=cv.getContext('2d');
+function resize(){cv.width=window.innerWidth;cv.height=window.innerHeight;}
+resize();window.addEventListener('resize',resize);
+const FOV_H=65, FOV_V=50;
+
+function drawFrame(sunAz,sunAlt,camQ,date,lat,lon){
+  const sw=cv.width,sh=cv.height;
+  ctx.clearRect(0,0,sw,sh);
+  const panH=document.getElementById('panel').offsetHeight||130;
+  const topH=36,areaH=sh-panH-topH;
+  const CX=sw/2,CY=topH+areaH/2;
+
+  // Helper — project any azel point through this frame's camera quaternion
+  const proj=(az,alt)=>{
+    const [wx,wy,wz]=azelToWorld(az,alt);
+    return worldToScreen(camQ,wx,wy,wz,sw,sh,panH,topH,FOV_H,FOV_V);
+  };
+
+  // ── CROSSHAIR ──
+  ctx.save();ctx.strokeStyle='rgba(245,237,216,0.3)';ctx.lineWidth=1;
+  const cs=20;
+  ctx.beginPath();
+  ctx.moveTo(CX-cs,CY);ctx.lineTo(CX-7,CY);ctx.moveTo(CX+7,CY);ctx.lineTo(CX+cs,CY);
+  ctx.moveTo(CX,CY-cs);ctx.lineTo(CX,CY-7);ctx.moveTo(CX,CY+7);ctx.lineTo(CX,CY+cs);
+  ctx.stroke();
+  ctx.beginPath();ctx.arc(CX,CY,16,0,Math.PI*2);
+  ctx.strokeStyle='rgba(245,237,216,0.1)';ctx.stroke();ctx.restore();
+
+  // ── HORIZON (alt=0 sweep) ──
+  const hPts=[];
+  for(let a=0;a<360;a+=2){const p=proj(a,0);if(p)hPts.push(p);}
+  if(hPts.length>1){
+    ctx.save();ctx.strokeStyle='rgba(245,237,216,0.2)';ctx.lineWidth=1;ctx.setLineDash([4,8]);
+    ctx.beginPath();ctx.moveTo(hPts[0].x,hPts[0].y);
+    for(const p of hPts)ctx.lineTo(p.x,p.y);
+    ctx.stroke();ctx.setLineDash([]);ctx.restore();
+  }
+
+  // ── CARDINALS ──
+  for(const[az,lbl] of[[0,'N'],[90,'L'],[180,'S'],[270,'O']]){
+    const p=proj(az,0);
+    if(p&&p.x>10&&p.x<sw-10&&p.y>topH&&p.y<sh-panH){
+      ctx.save();ctx.font='bold 12px DM Mono';ctx.fillStyle='rgba(245,237,216,0.3)';
+      ctx.textAlign='center';ctx.fillText(lbl,p.x,p.y+4);ctx.restore();
+    }
+  }
+
+  // ── SUN ARC (all computed with same camQ this frame) ──
+  const dayStart=new Date(date);dayStart.setHours(0,0,0,0);
+  const arcPts=[];
+  for(let m=0;m<=1440;m+=6){
+    const d=new Date(dayStart.getTime()+m*60000);
+    const s=sunPos(d,lat,lon);
+    arcPts.push({p:proj(s.az,s.alt),alt:s.alt,min:m});
+  }
+
+  // Below horizon dashed
+  ctx.save();ctx.strokeStyle='rgba(255,107,0,0.2)';ctx.lineWidth=1.5;ctx.setLineDash([3,8]);
+  let open=false;
+  for(const pt of arcPts){
+    if(pt.alt<=0&&pt.p){if(!open){ctx.beginPath();ctx.moveTo(pt.p.x,pt.p.y);open=true;}else ctx.lineTo(pt.p.x,pt.p.y);}
+    else if(open){ctx.stroke();open=false;}
+  }
+  if(open)ctx.stroke();
+  ctx.setLineDash([]);ctx.restore();
+
+  // Above horizon solid
+  const above=arcPts.filter(pt=>pt.alt>0&&pt.p);
+  if(above.length>1){
+    ctx.save();ctx.strokeStyle='rgba(255,184,0,0.7)';ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(above[0].p.x,above[0].p.y);
+    for(const pt of above)ctx.lineTo(pt.p.x,pt.p.y);
+    ctx.stroke();ctx.restore();
+  }
+
+  // Hourly dots
+  for(let h=0;h<=23;h++){
+    const d=new Date(dayStart.getTime()+h*3600000);
+    const s=sunPos(d,lat,lon);
+    if(s.alt<=0)continue;
+    const p=proj(s.az,s.alt);
+    if(!p||p.x<-20||p.x>sw+20||p.y<topH-20||p.y>sh-panH+20)continue;
+    ctx.save();
+    ctx.beginPath();ctx.arc(p.x,p.y,3,0,Math.PI*2);
+    ctx.fillStyle='rgba(255,184,0,0.7)';ctx.fill();
+    ctx.font='8px DM Mono';ctx.fillStyle='rgba(245,237,216,0.5)';
+    ctx.textAlign='center';ctx.fillText(`${h}h`,p.x,p.y-9);ctx.restore();
+  }
+
+  // ── SUN MARKER ──
+  const sp=proj(sunAz,sunAlt);
+  if(sp&&sp.x>-80&&sp.x<sw+80&&sp.y>topH-80&&sp.y<sh-panH+80){
+    for(const[r,a] of[[72,.025],[50,.06],[32,.14],[20,.28]]){
+      const rg=ctx.createRadialGradient(sp.x,sp.y,0,sp.x,sp.y,r);
+      rg.addColorStop(0,`rgba(255,184,0,${a})`);rg.addColorStop(1,'rgba(255,184,0,0)');
+      ctx.save();ctx.fillStyle=rg;ctx.beginPath();ctx.arc(sp.x,sp.y,r,0,Math.PI*2);ctx.fill();ctx.restore();
+    }
+    const cg=ctx.createRadialGradient(sp.x,sp.y,0,sp.x,sp.y,16);
+    cg.addColorStop(0,'#FFFCE0');cg.addColorStop(.4,'#FFB800');cg.addColorStop(.8,'#FF6B00');cg.addColorStop(1,'rgba(255,107,0,0)');
+    ctx.save();ctx.fillStyle=cg;ctx.beginPath();ctx.arc(sp.x,sp.y,16,0,Math.PI*2);ctx.fill();ctx.restore();
+    ctx.save();ctx.font='bold 10px DM Mono';ctx.fillStyle='rgba(245,237,216,.9)';
+    ctx.textAlign='center';ctx.fillText(`${Math.round(sunAlt)}°alt`,sp.x,sp.y-24);ctx.restore();
+    const dist=Math.sqrt((sp.x-CX)**2+(sp.y-CY)**2);
+    if(dist<40){
+      ctx.save();ctx.strokeStyle='rgba(57,255,122,.85)';ctx.lineWidth=2;
+      ctx.beginPath();ctx.arc(CX,CY,32,0,Math.PI*2);ctx.stroke();
+      ctx.font='bold 9px DM Mono';ctx.fillStyle='rgba(57,255,122,.9)';
+      ctx.textAlign='center';ctx.fillText('✓ SOL AQUI',CX,CY+48);ctx.restore();
+    }
+  } else {
+    // Arrow
+    const behind=!sp||sp.cz>=0;
+    const [wx,wy,wz]=azelToWorld(sunAz,sunAlt);
+    const [lcx,lcy,lcz]=Q.rotVec(Q.conj(camQ),wx,wy,wz);
+    const ang=Math.atan2(-lcy,lcx); // screen angle toward sun
+    const margin=55;
+    const ex=Math.max(margin,Math.min(sw-margin,CX+Math.cos(ang)*(sw*.4)));
+    const ey=Math.max(topH+margin,Math.min(sh-panH-margin,CY+Math.sin(ang)*(areaH*.4)));
+    ctx.save();ctx.translate(ex,ey);ctx.rotate(ang);
+    ctx.fillStyle='rgba(255,184,0,.9)';
+    ctx.beginPath();ctx.moveTo(20,0);ctx.lineTo(0,-8);ctx.lineTo(0,8);ctx.closePath();ctx.fill();
+    const mg=ctx.createRadialGradient(28,0,0,28,0,9);
+    mg.addColorStop(0,'#FFF5CC');mg.addColorStop(1,'#FF6B00');
+    ctx.fillStyle=mg;ctx.beginPath();ctx.arc(28,0,9,0,Math.PI*2);ctx.fill();
+    ctx.restore();
+    const hints=[];
+    if(behind)hints.push('☀ ATRÁS');
+    else{
+      if(lcx<-0.4)hints.push(`◀${Math.round(Math.abs(Math.atan2(-lcx,lcz))*R2D)}°esq`);
+      if(lcx> 0.4)hints.push(`${Math.round(Math.atan2(lcx,lcz)*R2D)}°dir▶`);
+      if(lcy> 0.3)hints.push(`▲${Math.round(Math.atan2(lcy,-lcz)*R2D)}°cima`);
+      if(lcy<-0.3)hints.push(`▼${Math.round(Math.abs(Math.atan2(lcy,-lcz))*R2D)}°baixo`);
+    }
+    if(hints.length){
+      ctx.save();ctx.font='10px DM Mono';ctx.fillStyle='rgba(255,184,0,.85)';
+      ctx.textAlign='center';ctx.fillText(hints.join('  '),CX,sh-panH-18);ctx.restore();
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// TIMELINE
+// ═══════════════════════════════════════════════════
+function updateTL(date,t){
+  if(!t.sr||!t.ss)return;
+  const p=Math.max(0,Math.min(1,(date-t.sr)/(t.ss-t.sr)));
+  document.getElementById('tlp').style.width=p*100+'%';
+  document.getElementById('tld').style.left=p*100+'%';
+  document.querySelectorAll('.tlm').forEach(e=>e.remove());
+  const tl=document.getElementById('tl');
+  for(const[pct,lbl] of[[0,fmt(t.sr)],[50,fmt(t.noon)],[100,fmt(t.ss)]]){
+    const m=document.createElement('div');
+    m.className='tlm';m.style.left=pct+'%';m.textContent=lbl;tl.appendChild(m);
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// MAIN LOOP
+// ═══════════════════════════════════════════════════
+function loop(){
+  if(!running||!GPS){requestAnimationFrame(loop);return;}
+
+  // alpha for Three.js:
+  // - iOS: webkitCompassHeading is CW from North
+  //        spec alpha is CCW from North → alpha = 360 - compass
+  //        BUT Three.js deviceorientation uses raw alpha + alphaOffset
+  //        For iOS absolute compass: alphaOffset = -(360-compass) expressed in spec alpha
+  //        Simplest: set alpha = (360 - rawCompass) * D2R directly
+  // - Android: deviceorientationabsolute gives absolute alpha already
+  let alphaRad;
+  if(rawCompass!=null){
+    alphaRad=(360-rawCompass)*D2R;
+  } else if(rawAlpha!=null){
+    alphaRad=rawAlpha*D2R;
+  } else {
+    alphaRad=0;
+  }
+  const betaRad=rawBeta*D2R;
+  const gammaRad=rawGamma*D2R;
+  const screenOrientRad=screenOrientDeg*D2R;
+
+  // Build raw quaternion this frame
+  const rawQ=deviceQuat(alphaRad,betaRad,gammaRad,screenOrientRad);
+
+  // SLERP smooth toward rawQ
+  camQ=Q.slerp(camQ,rawQ,SLERP_K);
+
+  const now=new Date();
+  const date=simDate
+    ?new Date(simDate.getFullYear(),simDate.getMonth(),simDate.getDate(),simDate.getHours(),simDate.getMinutes(),0)
+    :now;
+
+  const{alt,az}=sunPos(date,GPS.lat,GPS.lon);
+  const times=sunTimes(date,GPS.lat,GPS.lon);
+
+  document.getElementById('sv-az').textContent=Math.round(az)+'°';
+  document.getElementById('sv-alt').textContent=(alt>=0?'+':'')+Math.round(alt)+'°';
+  document.getElementById('sv-sr').textContent=fmt(times.sr);
+  document.getElementById('sv-ss').textContent=fmt(times.ss);
+  document.getElementById('tb-time').textContent=
+    `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+  document.getElementById('tb-date').textContent=
+    `${String(date.getDate()).padStart(2,'0')} ${MON[date.getMonth()]} ${date.getFullYear()}${simDate?' '+fmt(date):''}`;
+  document.getElementById('tb-loc').textContent=
+    `${GPS.lat.toFixed(4)}°${GPS.lat>=0?'N':'S'} ${Math.abs(GPS.lon).toFixed(4)}°${GPS.lon>=0?'L':'O'}`;
+  document.getElementById('tb-dbg').textContent=
+    `cmp:${rawCompass!=null?Math.round(rawCompass):'—'} β:${Math.round(rawBeta)} γ:${Math.round(rawGamma)} az:${Math.round(az)}° alt:${Math.round(alt)}°`;
+
+  drawFrame(az,alt,camQ,date,GPS.lat,GPS.lon);
+  updateTL(date,times);
+  requestAnimationFrame(loop);
+}
+
+// ═══════════════════════════════════════════════════
+// ORIENTATION
+// ═══════════════════════════════════════════════════
+function listenOrientation(){
+  window.addEventListener('orientationchange',()=>{screenOrientDeg=window.orientation||0;},{passive:true});
+  screenOrientDeg=window.orientation||0;
+
+  window.addEventListener('deviceorientation',e=>{
+    if(e.webkitCompassHeading!=null){
+      rawCompass=e.webkitCompassHeading;
+      document.getElementById('bg-comp').textContent='BÚSSOLA OK';
+      document.getElementById('bg-comp').className='badge ok';
+    }
+    if(e.alpha!=null)rawAlpha=e.alpha;
+    if(e.beta!=null) rawBeta=e.beta;
+    if(e.gamma!=null)rawGamma=e.gamma;
+  },{passive:true});
+
+  window.addEventListener('deviceorientationabsolute',e=>{
+    if(e.alpha!=null){
+      rawAlpha=e.alpha;
+      if(rawCompass==null){
+        document.getElementById('bg-comp').textContent='BÚSSOLA OK';
+        document.getElementById('bg-comp').className='badge ok';
+      }
+    }
+    if(e.beta!=null) rawBeta=e.beta;
+    if(e.gamma!=null)rawGamma=e.gamma;
+  },{passive:true});
+
+  setTimeout(()=>{
+    if(rawCompass==null&&rawAlpha==null){
+      document.getElementById('bg-comp').textContent='SEM BÚSSOLA';
+      document.getElementById('bg-comp').className='badge err';
+    }
+  },3000);
+}
+
+// ═══════════════════════════════════════════════════
+// START
+// ═══════════════════════════════════════════════════
+document.getElementById('startbtn').addEventListener('click',async function(){
+  const err=document.getElementById('permerr');err.style.display='none';
+
+  if(typeof DeviceOrientationEvent!=='undefined'&&typeof DeviceOrientationEvent.requestPermission==='function'){
+    try{
+      const state=await DeviceOrientationEvent.requestPermission();
+      if(state!=='granted'){err.textContent='Permissão de bússola negada. Vá em Ajustes > Safari > Movimento & Orientação.';err.style.display='block';}
+    }catch(e){console.warn(e);}
+  }
+
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:{ideal:1920}}});
+    document.getElementById('vid').srcObject=stream;
+  }catch(e){}
+
+  try{
+    await new Promise((res,rej)=>{
+      navigator.geolocation.getCurrentPosition(p=>{
+        GPS={lat:p.coords.latitude,lon:p.coords.longitude};
+        document.getElementById('bg-gps').textContent='GPS OK';
+        document.getElementById('bg-gps').className='badge ok';
+        res();
+      },rej,{enableHighAccuracy:true,timeout:12000});
+    });
+    navigator.geolocation.watchPosition(p=>{GPS={lat:p.coords.latitude,lon:p.coords.longitude}},null,{enableHighAccuracy:true});
+  }catch(e){
+    err.textContent='GPS negado. Habilite a localização e recarregue.';err.style.display='block';return;
+  }
+
+  listenOrientation();
+  document.getElementById('perm').style.opacity='0';
+  setTimeout(()=>document.getElementById('perm').style.display='none',500);
+  running=true;loop();
+});
+
+// ═══════════════════════════════════════════════════
+// DATE/TIME PICKER
+// ═══════════════════════════════════════════════════
+const pwrap=document.getElementById('pwrap');
+const inpDate=document.getElementById('inp-date');
+const inpTime=document.getElementById('inp-time');
+const n0=new Date();
+inpDate.value=n0.toISOString().split('T')[0];
+inpTime.value=`${String(n0.getHours()).padStart(2,'0')}:${String(n0.getMinutes()).padStart(2,'0')}`;
+document.getElementById('pick-btn').addEventListener('click',()=>{pwrap.style.display=pwrap.style.display==='flex'?'none':'flex';});
+function applyPicker(){
+  if(inpDate.value){
+    const[y,mo,d]=inpDate.value.split('-').map(Number);
+    const[h,mi]=inpTime.value?inpTime.value.split(':').map(Number):[12,0];
+    simDate=new Date(y,mo-1,d,h,mi,0);
+    document.getElementById('pick-btn').textContent=`📅 ${String(simDate.getDate()).padStart(2,'0')} ${MON[simDate.getMonth()]} ${fmt(simDate)}`;
+  }
+  pwrap.style.display='none';
+}
+inpDate.addEventListener('change',applyPicker);
+inpTime.addEventListener('change',applyPicker);
+document.getElementById('pnow').addEventListener('click',()=>{
+  simDate=null;document.getElementById('pick-btn').textContent='📅 DATA / HORA';pwrap.style.display='none';
+  const n=new Date();inpDate.value=n.toISOString().split('T')[0];
+  inpTime.value=`${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`;
+});
+document.getElementById('now-btn').addEventListener('click',()=>{simDate=null;document.getElementById('pick-btn').textContent='📅 DATA / HORA';});
+</script>
+</body>
+</html>
